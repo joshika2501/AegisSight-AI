@@ -1,6 +1,6 @@
 # AegisSight Backend API Contract V1
 
-Purpose: define the final backend API contract for a 2-day AegisSight AI hackathon prototype. This contract keeps only the APIs needed for the working flow:
+Purpose: defined the final backend API contract for AegisSight AI hackathon prototype. This contract keeps only the APIs needed for the working flow:
 
 ```text
 Camera/UAV Source
