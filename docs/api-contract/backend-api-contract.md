@@ -184,9 +184,9 @@ Request JSON:
 {
   "sourceId": "CAM-102",
   "eventType": "PHYSICAL_DISTURBANCE",
-  "confidence": 0.94,
   "severity": "HIGH",
   "peopleCount": 28,
+  "vehicleCount": 2
   "riskScore": 87,
   "timestamp": "2026-07-23T10:15:30Z",
   "summary": "Possible physical disturbance detected near the main gate."
@@ -653,10 +653,23 @@ Fields:
 - Real-time image/video stream analysis
 - Object/event detection
 - Tracking and temporal analysis
-- Confidence calculation
 - Risk score generation
-- Sending standard AI inference result JSON to `POST /api/detections`
-- AI does not generate images and does not manage camera metadata
+- Generation of incident summary and analytics output
+
+The current AI implementation does **not** expose an HTTP API or generate a JSON payload directly.
+
+A lightweight AI Integration Adapter will convert the AI analytics output into the backend ingestion request and send it to:
+
+`POST /api/detections`
+
+without modifying the AI model or inference logic.
+
+The AI module does not:
+
+- Generate images
+- Manage camera metadata
+- Generate event-level confidence values
+- Perform HTTP communication with the backend directly
 
 ### Backend Team Owns
 
