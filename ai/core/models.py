@@ -174,3 +174,29 @@ class AIResult:
     matches: List[MatchResult]
 
     routes: List[DroneRoute]
+    
+
+# ---------------------------------------------------------
+# Feature index record and search result
+# ---------------------------------------------------------
+
+
+@dataclass
+class FeatureRecord:
+    """Represents one indexed vehicle feature."""
+
+    vehicle_id: str
+    camera_id: str
+    timestamp: float
+    embedding: np.ndarray
+    confidence: float = 1.0
+    frame_id: Optional[int] = None
+    bbox: Optional[tuple] = None  # (x1, y1, x2, y2)
+
+
+@dataclass
+class MatchResult:
+    """Represents one similarity search result."""
+
+    record: FeatureRecord
+    score: float
