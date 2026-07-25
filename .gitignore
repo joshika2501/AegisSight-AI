@@ -1,26 +1,34 @@
-# Virtual environments
-venv/
-.venv/
-
-# Python cache
+# Python
 __pycache__/
 *.py[cod]
+*.pyo
 
-# Model weights
-*.pt
-*.pth
-
-# Datasets
-datasets/
-
-# Output folders
-outputs/
-logs/
+# Virtual Environment
+venv/
+.venv/
 
 # IDE
 .vscode/
 .idea/
 
-# OS files
+# Model Weights
+*.pt
+*.pth
+
+# Logs
+logs/
+*.log
+
+# Outputs
+outputs/
+runs/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Testing
+.pytest_cache/
+
+# Environment
+.env
