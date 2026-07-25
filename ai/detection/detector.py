@@ -3,16 +3,14 @@
 AegisSight AI
 Vehicle Detection Module
 
-Uses:
-- YOLO11 (Ultralytics)
-- Shared Detection Models
-- Configuration Loader
+Author: Joshika Parijat
+
+Description:
+    Production-ready YOLO11 vehicle detector.
 =========================================================
 """
 
-from pathlib import Path
 from typing import List
-
 import cv2
 from ultralytics import YOLO
 
@@ -24,7 +22,7 @@ from ai.utils.logger import get_logger
 
 class VehicleDetector:
     """
-    Production-ready vehicle detector using YOLO11.
+    Vehicle detection using YOLO11.
     """
 
     VEHICLE_CLASSES = {
@@ -37,7 +35,7 @@ class VehicleDetector:
 
     def __init__(self):
 
-        self.logger = get_logger(self.__class__.__name__)
+        self.logger = get_logger("VehicleDetector")
 
         self.config = ConfigLoader()
 
@@ -45,22 +43,22 @@ class VehicleDetector:
 
         self.model_name = self.config.get(
             "detector",
-            "model",
+            "model"
         )
 
         self.confidence = self.config.get(
             "detector",
-            "confidence",
+            "confidence"
         )
 
         self.iou = self.config.get(
             "detector",
-            "iou",
+            "iou"
         )
 
         self.max_det = self.config.get(
             "detector",
-            "max_detections",
+            "max_detections"
         )
 
         self.logger.info(
@@ -72,3 +70,103 @@ class VehicleDetector:
         self.logger.info(
             f"Running on device: {self.device}"
         )
+
+    def detect(
+        self,
+        frame,
+        frame_id=None,
+    ) -> List[Detection]:
+
+        """
+        Detect vehicles in a frame.
+        """
+
+        results = self.model.predict(
+            source=frame,
+            conf=self.confidence,
+            iou=self.iou,
+            max_det=self.max_det,
+            device=self.device,
+            verbose=False,
+        )
+
+        detections = []
+
+        for result in results:
+
+            for box in result.boxes:
+
+                class_id = int(box.cls.item())
+
+                class_name = self.model.names[class_id]
+
+                if class_name not in self.VEHICLE_CLASSES:
+                    continue
+
+                confidence = float(box.conf.item())
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    box.xyxy[0].tolist(),
+                )
+
+                detection = Detection(
+                    bbox=BoundingBox(
+                        x1=x1,
+                        y1=y1,
+                        x2=x2,
+                        y2=y2,
+                    ),
+                    confidence=confidence,
+                    class_id=class_id,
+                    class_name=class_name,
+                    frame_id=frame_id,
+                )
+
+                detections.append(detection)
+
+        self.logger.info(
+            f"{len(detections)} vehicle(s) detected."
+        )
+
+        return detections
+
+    def draw_detections(
+        self,
+        frame,
+        detections: List[Detection],
+    ):
+        """
+        Draw bounding boxes on an image.
+        """
+
+        image = frame.copy()
+
+        for detection in detections:
+
+            box = detection.bbox
+
+            cv2.rectangle(
+                image,
+                (box.x1, box.y1),
+                (box.x2, box.y2),
+                (0, 255, 0),
+                2,
+            )
+
+            label = (
+                f"{detection.class_name} "
+                f"{detection.confidence:.2f}"
+            )
+
+            cv2.putText(
+                image,
+                label,
+                (box.x1, box.y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2,
+            )
+
+        return image
