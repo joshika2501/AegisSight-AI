@@ -46,6 +46,9 @@ class BoundingBox:
 
 @dataclass
 class Detection:
+    """
+    Represents one detected vehicle.
+    """
 
     bbox: BoundingBox
 
@@ -55,14 +58,93 @@ class Detection:
 
     class_name: str
 
-    frame_id: Optional[int] = None
+    frame_id: int | None = None
 
-    track_id: Optional[int] = None
+    track_id: int | None = None
 
 
 # --------------------------------------------------------
 # Vehicle Crop
 # --------------------------------------------------------
+def track(
+    self,
+    frame,
+    frame_id=None,
+    persist: bool = True,
+) -> List[Detection]:
+    """
+    Detect and track vehicles using YOLO + ByteTrack.
+    """
+
+    results = self.model.track(
+        source=frame,
+        conf=self.confidence,
+        iou=self.iou,
+        max_det=self.max_det,
+        device=self.device,
+        persist=persist,
+        tracker="bytetrack.yaml",
+        verbose=False,
+    )
+
+    detections = []
+
+    for result in results:
+
+        if result.boxes is None:
+            continue
+
+        for box in result.boxes:
+
+            class_id = int(box.cls.item())
+
+            class_name = self.model.names[class_id]
+
+            if class_name not in self.VEHICLE_CLASSES:
+                continue
+
+            confidence = float(box.conf.item())
+
+            x1, y1, x2, y2 = map(
+                int,
+                box.xyxy[0].tolist(),
+            )
+
+            track_id = None
+
+            if box.id is not None:
+                track_id = int(box.id.item())
+
+            detections.append(
+
+                Detection(
+
+                    bbox=BoundingBox(
+                        x1=x1,
+                        y1=y1,
+                        x2=x2,
+                        y2=y2,
+                    ),
+
+                    confidence=confidence,
+
+                    class_id=class_id,
+
+                    class_name=class_name,
+
+                    frame_id=frame_id,
+
+                    track_id=track_id,
+
+                )
+
+            )
+
+    self.logger.info(
+        f"{len(detections)} tracked vehicle(s)."
+    )
+
+    return detections
 
 @dataclass
 class VehicleCrop:

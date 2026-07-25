@@ -6,11 +6,13 @@ Vehicle Detection Module
 Author: Joshika Parijat
 
 Description:
-    Production-ready YOLO11 vehicle detector.
+    Production-ready YOLO11 Vehicle Detector
+    with ByteTrack support.
 =========================================================
 """
 
 from typing import List
+
 import cv2
 from ultralytics import YOLO
 
@@ -22,7 +24,7 @@ from ai.utils.logger import get_logger
 
 class VehicleDetector:
     """
-    Vehicle detection using YOLO11.
+    Vehicle Detection + Tracking using YOLO11.
     """
 
     VEHICLE_CLASSES = {
@@ -77,10 +79,6 @@ class VehicleDetector:
         frame_id=None,
     ) -> List[Detection]:
 
-        """
-        Detect vehicles in a frame.
-        """
-
         results = self.model.predict(
             source=frame,
             conf=self.confidence,
@@ -93,6 +91,9 @@ class VehicleDetector:
         detections = []
 
         for result in results:
+
+            if result.boxes is None:
+                continue
 
             for box in result.boxes:
 
@@ -110,23 +111,114 @@ class VehicleDetector:
                     box.xyxy[0].tolist(),
                 )
 
-                detection = Detection(
-                    bbox=BoundingBox(
-                        x1=x1,
-                        y1=y1,
-                        x2=x2,
-                        y2=y2,
-                    ),
-                    confidence=confidence,
-                    class_id=class_id,
-                    class_name=class_name,
-                    frame_id=frame_id,
-                )
+                detections.append(
 
-                detections.append(detection)
+                    Detection(
+
+                        bbox=BoundingBox(
+                            x1=x1,
+                            y1=y1,
+                            x2=x2,
+                            y2=y2,
+                        ),
+
+                        confidence=confidence,
+
+                        class_id=class_id,
+
+                        class_name=class_name,
+
+                        frame_id=frame_id,
+
+                    )
+
+                )
 
         self.logger.info(
             f"{len(detections)} vehicle(s) detected."
+        )
+
+        return detections
+
+    def track(
+        self,
+        frame,
+        frame_id=None,
+        persist=True,
+    ) -> List[Detection]:
+
+        """
+        Detect and track vehicles using
+        YOLO11 + ByteTrack.
+        """
+
+        results = self.model.track(
+            source=frame,
+            conf=self.confidence,
+            iou=self.iou,
+            max_det=self.max_det,
+            device=self.device,
+            persist=persist,
+            tracker="bytetrack.yaml",
+            verbose=False,
+        )
+
+        detections = []
+
+        for result in results:
+
+            if result.boxes is None:
+                continue
+
+            for box in result.boxes:
+
+                class_id = int(box.cls.item())
+
+                class_name = self.model.names[class_id]
+
+                if class_name not in self.VEHICLE_CLASSES:
+                    continue
+
+                confidence = float(box.conf.item())
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    box.xyxy[0].tolist(),
+                )
+
+                track_id = None
+
+                if box.id is not None:
+
+                    track_id = int(box.id.item())
+
+                detections.append(
+
+                    Detection(
+
+                        bbox=BoundingBox(
+                            x1=x1,
+                            y1=y1,
+                            x2=x2,
+                            y2=y2,
+                        ),
+
+                        confidence=confidence,
+
+                        class_id=class_id,
+
+                        class_name=class_name,
+
+                        frame_id=frame_id,
+
+                        track_id=track_id,
+
+                    )
+
+                )
+
+        self.logger.info(
+            f"{len(detections)} tracked vehicle(s)."
         )
 
         return detections
@@ -136,9 +228,6 @@ class VehicleDetector:
         frame,
         detections: List[Detection],
     ):
-        """
-        Draw bounding boxes on an image.
-        """
 
         image = frame.copy()
 
@@ -154,10 +243,20 @@ class VehicleDetector:
                 2,
             )
 
-            label = (
-                f"{detection.class_name} "
-                f"{detection.confidence:.2f}"
-            )
+            if detection.track_id is not None:
+
+                label = (
+                    f"ID {detection.track_id} | "
+                    f"{detection.class_name} "
+                    f"{detection.confidence:.2f}"
+                )
+
+            else:
+
+                label = (
+                    f"{detection.class_name} "
+                    f"{detection.confidence:.2f}"
+                )
 
             cv2.putText(
                 image,
