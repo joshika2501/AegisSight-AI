@@ -8,10 +8,12 @@ import com.aegissight.common.infrastructure.dto.ErrorResponse;
 import com.aegissight.common.infrastructure.dto.FieldErrorDetail;
 import com.aegissight.incident.domain.exception.IncidentNotFoundException;
 import com.aegissight.incident.domain.exception.InvalidStatusTransitionException;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -167,6 +169,47 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(buildErrorResponse(
+                        HttpStatus.FORBIDDEN,
+                        HttpStatus.FORBIDDEN.getReasonPhrase(),
+                        "Access denied",
+                        request.getRequestURI(),
+                        List.of()
+                ));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        List<FieldErrorDetail> fieldErrors = exception.getConstraintViolations()
+                .stream()
+                .map(violation -> new FieldErrorDetail(
+                        violation.getPropertyPath().toString(),
+                        violation.getMessage(),
+                        violation.getInvalidValue()
+                ))
+                .toList();
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(buildErrorResponse(
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        "Validation Failed",
+                        "Request parameters have invalid values",
+                        request.getRequestURI(),
+                        fieldErrors
+                ));
+    }
+
     @ExceptionHandler(AegisException.class)
     public ResponseEntity<ErrorResponse> handleAegisException(
             AegisException exception,
@@ -193,7 +236,7 @@ public class GlobalExceptionHandler {
                 .body(buildErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         "Internal Server Error",
-                        exception.getMessage() != null ? exception.getMessage() : "Unexpected error",
+                        "Unexpected error",
                         request.getRequestURI(),
                         List.of()
                 ));

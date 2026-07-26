@@ -11,8 +11,11 @@ import com.aegissight.incident.api.dto.UpdateIncidentStatusRequest;
 import com.aegissight.incident.api.dto.UpdateIncidentStatusResponse;
 import com.aegissight.incident.application.service.IncidentService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Validated
 @RequestMapping("/api/incidents")
 public class IncidentController {
 
@@ -37,8 +41,8 @@ public class IncidentController {
             @RequestParam(required = false) Severity severity,
             @RequestParam(required = false) EventType eventType,
             @RequestParam(required = false) String sourceId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be 0 or greater") int page,
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "size must be between 1 and 100") @Max(value = 100, message = "size must be between 1 and 100") int size
     ) {
         return incidentService.listIncidents(status, severity, eventType, sourceId, page, size);
     }

@@ -22,6 +22,12 @@ public class JwtTokenProvider {
             @Value("${aegissight.jwt.secret}") String secret,
             @Value("${aegissight.jwt.expiration-seconds}") long expirationSeconds
     ) {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 bytes");
+        }
+        if (expirationSeconds <= 0) {
+            throw new IllegalStateException("JWT expiration must be greater than zero");
+        }
         this.secret = secret;
         this.expirationSeconds = expirationSeconds;
     }

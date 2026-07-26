@@ -4,6 +4,17 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Environment / secrets ###
+.env
+.env.*
+!.env.example
+
+### Logs ###
+logs/
+*.log
+*.pid
+hs_err_pid*
+
 ### STS ###
 .apt_generated
 .classpath
@@ -31,3 +42,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OS files ###
+.DS_Store
+Thumbs.db
