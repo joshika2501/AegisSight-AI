@@ -1,5 +1,6 @@
 package com.aegissight.common.infrastructure.exception;
 
+import com.aegissight.auth.domain.exception.InvalidCredentialsException;
 import com.aegissight.camera.domain.exception.CameraAlreadyExistsException;
 import com.aegissight.camera.domain.exception.CameraNotFoundException;
 import com.aegissight.common.domain.exception.AegisException;
@@ -144,6 +145,22 @@ public class GlobalExceptionHandler {
                 .body(buildErrorResponse(
                         HttpStatus.CONFLICT,
                         HttpStatus.CONFLICT.getReasonPhrase(),
+                        exception.getMessage(),
+                        request.getRequestURI(),
+                        List.of()
+                ));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(
+            InvalidCredentialsException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(buildErrorResponse(
+                        HttpStatus.UNAUTHORIZED,
+                        HttpStatus.UNAUTHORIZED.getReasonPhrase(),
                         exception.getMessage(),
                         request.getRequestURI(),
                         List.of()
