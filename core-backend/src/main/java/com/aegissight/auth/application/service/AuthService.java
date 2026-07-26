@@ -12,7 +12,7 @@ public class AuthService {
     private final UserRepository userRepository;
 
 
-    public UserService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
